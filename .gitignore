@@ -1,0 +1,34 @@
+# Dependencies and build outputs
+node_modules/
+dist/
+dist-*/
+build/
+out/
+coverage/
+*.exe
+*.blockmap
+*.log
+
+# Local OmniDev state, tokens and backups
+.omnidev/
+.omnidev*
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.bak
+*.backup
+*.brand-backup
+*.db
+*.sqlite
+*.sqlite3
+
+# Local tooling
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp

@@ -1,0 +1,74 @@
+{
+  "name": "omnidev-studio",
+  "productName": "OmniDev Studio",
+  "version": "1.1.0",
+  "description": "OmniDev Studio - AI-powered desktop development workspace and MCP server",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "server-only": "node src/main/server-standalone.js",
+    "build": "npm run build:win",
+    "build:win": "electron-builder --win nsis --publish never",
+    "build:portable": "electron-builder --win portable --publish never",
+    "brand:icons": "electron scripts/generate-brand-icons.cjs"
+  },
+  "keywords": [
+    "mcp",
+    "electron",
+    "chatgpt",
+    "claude",
+    "developer-agent",
+    "tunnel"
+  ],
+  "author": "AdiKhanOfficial",
+  "license": "MIT",
+  "dependencies": {
+    "@ngrok/ngrok": "^1.8.0",
+    "codemirror": "^5.65.16",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "puppeteer": "^25.18.1",
+    "sql.js": "^1.16.0",
+    "uuid": "^14.0.3"
+  },
+  "devDependencies": {
+    "electron": "^45.3.4",
+    "electron-builder": "26.8.1"
+  },
+  "build": {
+    "appId": "com.omnidev.studio",
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "plugins/**/*"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "artifactName": "OmniDev Studio Setup ${version}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "shortcutName": "OmniDev Studio",
+      "uninstallDisplayName": "OmniDev Studio"
+    },
+    "portable": {
+      "artifactName": "OmniDev Studio Portable ${version}.${ext}",
+      "useZip": true
+    }
+  }
+}

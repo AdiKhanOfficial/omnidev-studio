@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniDev Studio</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo.svg">
+  
+  <!-- CodeMirror CSS & Themes -->
+  <link rel="stylesheet" href="../../node_modules/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="../../node_modules/codemirror/theme/material-darker.css">
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="studio-app">
+    <!-- Top Professional Header -->
+    <header class="studio-header">
+      <div class="header-left">
+        <button class="brand-badge" id="btn-brand-home" title="Open workspaces">
+          <img src="../../assets/logo.svg" alt="" class="brand-logo-img">
+          <span class="brand-text">OmniDev <strong>Studio</strong></span>
+        </button>
+
+        <!-- Project Switcher Pill -->
+        <div class="project-pill-wrap">
+          <div class="project-pill" id="btn-project-dropdown" title="Click to switch workspace">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="14" height="14">
+              <path d="M14.5 3H7.71l-.85-.85A1.5 1.5 0 0 0 5.8 1.71H1.5A1.5 1.5 0 0 0 0 3.21v9.58A1.5 1.5 0 0 0 1.5 14.3h13a1.5 1.5 0 0 0 1.5-1.5V4.5a1.5 1.5 0 0 0-1.5-1.5z" fill="currentColor"/>
+            </svg>
+            <span class="proj-name" id="hdr-project-name">No workspace</span>
+            <span class="pill-arrow">▾</span>
+          </div>
+
+          <!-- Project Selector Dropdown -->
+          <div class="project-dropdown-menu" id="project-dropdown-menu" style="display:none;">
+            <div class="dropdown-header">SWITCH WORKSPACE</div>
+            <div class="dropdown-items" id="project-dropdown-items">
+              <!-- Populated by JS -->
+            </div>
+            <div class="dropdown-footer">
+              <button class="btn btn-xs btn-outline w-100" id="btn-hdr-new-proj">+ New Workspace...</button>
+              <button class="btn btn-xs btn-outline w-100" id="btn-close-workspace" hidden>Close workspace</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tunnel & Action Controls -->
+      <div class="header-right">
+        <!-- Live Ngrok URL Indicator & Copy -->
+        <div class="mcp-tunnel-pill" id="hdr-tunnel-pill">
+          <span class="status-indicator"></span>
+          <span class="tunnel-label">MCP:</span>
+          <span class="tunnel-url-text" id="hdr-mcp-url-display">Connecting…</span>
+          <button class="btn-copy-tag" id="btn-hdr-copy-mcp" title="Copy Tokenized MCP URL for ChatGPT">
+            Copy URL
+          </button>
+        </div>
+
+        <button class="header-btn" id="btn-theme" title="Switch color theme">Theme</button>
+        <button class="header-btn" id="btn-hdr-connect-guide" title="MCP connection settings">
+          <svg class="icon-svg" viewBox="0 0 16 16" width="14" height="14"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM5.5 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-5 4.5c.3-1.2 1.4-2 2.5-2s2.2.8 2.5 2h-5z" fill="currentColor"/></svg>
+          <span>MCP Setup</span>
+        </button>
+
+        <button class="header-btn" id="btn-hdr-sound" title="Toggle Sound Chime on Approvals">
+          <svg class="icon-svg" viewBox="0 0 16 16" width="14" height="14"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3.68l-.85 1.7a.5.5 0 0 0 .45.72h9.8a.5.5 0 0 0 .45-.72l-.85-1.7V6A4.5 4.5 0 0 0 8 1.5zM6 13a2 2 0 1 0 4 0H6z" fill="currentColor"/></svg>
+          <span id="hdr-sound-label">Sound: ON</span>
+        </button>
+
+        <button class="header-btn-icon" id="btn-hdr-settings" title="Settings (Ngrok, Security Token, Permissions)">
+          <svg class="icon-svg" viewBox="0 0 16 16" width="15" height="15"><path d="M9.1 4.4L8.6 2H7.4l-.5 2.4-.7.3-2-1.3-.9.8 1.3 2-.3.7-2.4.5v1.2l2.4.5.3.7-1.3 2 .8.9 2-1.3.7.3.5 2.4h1.2l.5-2.4.7-.3 2 1.3.9-.8-1.3-2 .3-.7 2.4-.5V7.4l-2.4-.5-.3-.7 1.3-2-.8-.9-2 1.3-.7-.3zM8 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="currentColor"/></svg>
+        </button>
+
+        <!-- Custom Frameless Window Controls -->
+        <div class="window-controls">
+          <button class="win-btn win-min" id="btn-win-min" title="Minimize Window">&#x2014;</button>
+          <button class="win-btn win-max" id="btn-win-max" title="Maximize Window">&#x25A1;</button>
+          <button class="win-btn win-close" id="btn-win-close" title="Close">&#x2715;</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Urgent Action Approval Alert Strip -->
+    <div class="approval-strip" id="approval-strip" style="display:none;">
+      <div class="approval-strip-content">
+        <div class="approval-tag-text">
+          <span class="warning-icon">⚠️</span>
+          <span>AI Action Requires Approval: <strong id="approval-tool-tag">-</strong></span>
+        </div>
+        <div class="approval-params-preview" id="approval-params-json">{}</div>
+        <div class="approval-actions-group">
+          <button class="btn btn-xs btn-danger" id="btn-deny-action">Deny</button>
+          <button class="btn btn-xs btn-secondary" id="btn-approve-session">Allow for Session</button>
+          <button class="btn btn-xs btn-primary" id="btn-approve-action">✓ Approve & Execute</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <div class="studio-body">
+      <!-- 1. Left Activity Rail -->
+      <aside class="activity-rail">
+        <div class="rail-top">
+          <button class="rail-icon active" data-pane="pane-explorer" title="Files Explorer">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M14.5 3H7.71l-.85-.85A1.5 1.5 0 0 0 5.8 1.71H1.5A1.5 1.5 0 0 0 0 3.21v9.58A1.5 1.5 0 0 0 1.5 14.3h13a1.5 1.5 0 0 0 1.5-1.5V4.5a1.5 1.5 0 0 0-1.5-1.5z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-activity" title="Live AI Activity & Background Jobs">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M1.5 8h2.8l1.7-4.2a.75.75 0 0 1 1.4.1l2.2 7.3 1.7-3.8A.75.75 0 0 1 12 7h2.5a.75.75 0 0 1 0 1.5h-2l-2.2 4.8a.75.75 0 0 1-1.4-.1L6.7 5.9l-1.7 4.2A.75.75 0 0 1 4.3 9.5H1.5a.75.75 0 0 1 0-1.5z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-skills" title="Skills &amp; Plugins">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M6 1.5a1.5 1.5 0 0 1 3 0V3h2.5A1.5 1.5 0 0 1 13 4.5V7h1.5a1.5 1.5 0 0 1 0 3H13v2.5a1.5 1.5 0 0 1-1.5 1.5H9v-1.5a1.5 1.5 0 0 0-3 0V14H3.5A1.5 1.5 0 0 1 2 12.5V10h1.5a1.5 1.5 0 0 0 0-3H2V4.5A1.5 1.5 0 0 1 3.5 3H6V1.5z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-tools" title="Tools Catalog &amp; Permission Matrix">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M10.6 1.5a3.5 3.5 0 0 0-3.3 4.7L1.9 11.6a1.5 1.5 0 0 0 2.1 2.1l5.4-5.4a3.5 3.5 0 0 0 4.3-4.6l-2 2-1.8-.5-.5-1.8 2-2a3.5 3.5 0 0 0-.8-.1z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-history" title="Audit History &amp; Analytics">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M8 1.5a6.5 6.5 0 1 0 6.3 8.1.75.75 0 0 0-1.45-.37A5 5 0 1 1 8 3v2.2a.3.3 0 0 0 .5.22l3-2.3a.3.3 0 0 0 0-.48l-3-2.3A.3.3 0 0 0 8 .58V1.5zM7.25 5v3.3c0 .2.1.39.27.5l2.5 1.6.8-1.26-2.07-1.3V5h-1.5z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-checkpoints" title="Checkpoints (workspace restore points)">
+            <span id="rail-cp-count" class="rail-cp-count" hidden>0</span>
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M3 1.5h10a.5.5 0 0 1 .5.5v12.7a.3.3 0 0 1-.5.2L8 11.2 3 14.9a.3.3 0 0 1-.5-.2V2a.5.5 0 0 1 .5-.5z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-preview" title="Live Preview">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M1.5 2.5h13a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm0 2.5v7.5h13V5H1.5zm1.5-1.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm2 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button class="rail-icon" data-pane="pane-db" title="Database Browser">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M8 1c3.3 0 6 1.1 6 2.5S11.3 6 8 6 2 4.9 2 3.5 4.7 1 8 1zM2 5.8C3.2 6.6 5.4 7 8 7s4.8-.4 6-1.2v2.4C14 9.6 11.3 10.5 8 10.5S2 9.6 2 8.2V5.8zM2 10.4c1.2.8 3.4 1.1 6 1.1s4.8-.3 6-1.1v2.1C14 14 11.3 15 8 15s-6-1-6-2.5v-2.1z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="rail-bottom">
+          <button class="rail-icon" id="btn-rail-settings" title="Settings (Ngrok, Security Token, Permissions)">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M9.1 4.4L8.6 2H7.4l-.5 2.4-.7.3-2-1.3-.9.8 1.3 2-.3.7-2.4.5v1.2l2.4.5.3.7-1.3 2 .8.9 2-1.3.7.3.5 2.4h1.2l.5-2.4.7-.3 2 1.3.9-.8-1.3-2 .3-.7 2.4-.5V7.4l-2.4-.5-.3-.7 1.3-2-.8-.9-2 1.3-.7-.3zM8 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- 2. Primary Sidebar (Explorer / Notes / Activity & Jobs) -->
+      <aside class="sidebar-panel" id="sidebar-panel">
+        <!-- Pane 1: File Explorer & Environment Notes -->
+        <div class="sidebar-view active" id="pane-explorer">
+          <div class="view-header">
+            <span class="view-title">EXPLORER</span>
+            <div class="view-actions">
+              <button class="action-btn" id="btn-new-workspace-side" title="Create New Project Workspace">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-refresh-tree" title="Refresh Files">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M13.65 2.35A8 8 0 1 0 16 8h-1.5a6.5 6.5 0 1 1-1.9-4.6l-2.1 2.1h5.5V0l-2.35 2.35z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="empty-placeholder" id="explorer-empty">No workspace open.</p>
+          <!-- Active Workspace Root Title -->
+          <div class="accordion-section" id="explorer-workspace" hidden>
+            <button type="button" class="accordion-header" id="acc-hdr-root" aria-expanded="true" aria-controls="explorer-file-tree">
+              <svg class="disclosure-icon" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="accordion-label" id="sb-root-folder-name">WORKSPACE</span>
+              <span class="badge-tag" id="sb-root-type">Node.js</span>
+            </button>
+            <!-- File Tree Container -->
+            <div class="file-tree-scroll" id="explorer-file-tree">
+              <!-- Rendered recursively by JS -->
+            </div>
+          </div>
+
+          <!-- Developer Environment Notes Accordion -->
+          <div class="accordion-section notes-section" id="explorer-notes" hidden>
+            <div class="notes-heading">
+              <button type="button" class="accordion-header" id="acc-hdr-notes" aria-expanded="true" aria-controls="sb-notes-content-box"><svg class="disclosure-icon" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="accordion-label">ENVIRONMENT &amp; DEVELOPER NOTES</span></button>
+              <button class="btn-icon-link" id="btn-trigger-edit-notes" title="Edit Developer Notes">✏️</button>
+            </div>
+            <div class="notes-content-box" id="sb-notes-content-box">
+              <div class="notes-text" id="sb-notes-text">
+                No environment notes configured yet. Click ✏️ to add localhost URL, XAMPP port, MySQL credentials.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 2: Live AI Activity & Background Jobs -->
+        <div class="sidebar-view" id="pane-activity">
+          <div class="view-header">
+            <span class="view-title">LIVE AI ACTIVITY &amp; JOBS</span>
+            <button class="action-btn" id="btn-clear-activity-feed" title="Clear Feed">
+              <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" fill="currentColor"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h2.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3h11V2h-11v1z" fill="currentColor"/></svg>
+            </button>
+          </div>
+
+          <!-- Section A: Running Processes / Background Jobs (resizable) -->
+          <div class="activity-section-block" id="activity-section-jobs" style="height: 180px; min-height: 60px;">
+            <div class="activity-block-hdr">
+              <span>ACTIVE &amp; BACKGROUND TASKS</span>
+              <span class="badge-count" id="jobs-active-badge">0</span>
+            </div>
+            <div class="jobs-mini-list" id="jobs-mini-list">
+              <div class="empty-placeholder-sm">No running processes.</div>
+            </div>
+          </div>
+
+          <!-- Horizontal Resizer between the two activity sections -->
+          <div class="activity-section-resizer" id="activity-section-resizer" title="Drag to resize sections"></div>
+
+          <!-- Section B: Live AI Tools History (takes remaining space) -->
+          <div class="activity-section-block flex-1" id="activity-section-tools">
+            <div class="activity-block-hdr">
+              <span>TOOL INVOCATIONS (CLICK TO INSPECT)</span>
+            </div>
+            <div class="activity-feed-scroll" id="activity-feed-scroll">
+              <div class="empty-placeholder">Waiting for AI tool calls...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 3: Skills & Plugins -->
+        <div class="sidebar-view" id="pane-skills">
+          <div class="view-header">
+            <span class="view-title">SKILLS &amp; PLUGINS</span>
+            <div class="view-actions">
+              <button class="action-btn" id="btn-new-skill" title="Create a new skill">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-open-skills-dir" title="Open plugins folder">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M14.5 3H7.71l-.85-.85A1.5 1.5 0 0 0 5.8 1.71H1.5A1.5 1.5 0 0 0 0 3.21v9.58A1.5 1.5 0 0 0 1.5 14.3h13a1.5 1.5 0 0 0 1.5-1.5V4.5a1.5 1.5 0 0 0-1.5-1.5z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-reload-skills" title="Reload all skills">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M13.65 2.35A8 8 0 1 0 16 8h-1.5a6.5 6.5 0 1 1-1.9-4.6l-2.1 2.1h5.5V0l-2.35 2.35z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="skills-scroll" id="skills-list">
+            <div class="empty-placeholder">Loading skills…</div>
+          </div>
+        </div>
+
+        <!-- Pane 4: Tools Catalog & Permission Matrix -->
+        <div class="sidebar-view" id="pane-tools">
+          <div class="view-header">
+            <span class="view-title">TOOLS &amp; PERMISSIONS</span>
+            <span class="badge-count" id="tools-count-badge">0</span>
+          </div>
+          <div class="tools-search-wrap">
+            <input type="text" class="tools-search" id="tools-search" placeholder="Search tools…">
+          </div>
+          <div class="tools-scroll" id="tools-catalog-list">
+            <div class="empty-placeholder">Loading tools…</div>
+          </div>
+        </div>
+
+        <!-- Pane 5: Audit History -->
+        <div class="sidebar-view" id="pane-history">
+          <div class="view-header">
+            <span class="view-title">AUDIT HISTORY</span>
+            <div class="view-actions">
+              <button class="action-btn" id="btn-refresh-audit" title="Refresh">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M13.65 2.35A8 8 0 1 0 16 8h-1.5a6.5 6.5 0 1 1-1.9-4.6l-2.1 2.1h5.5V0l-2.35 2.35z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-clear-audit" title="Clear audit log">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" fill="currentColor"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h2.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="audit-scroll" id="audit-list">
+            <div class="empty-placeholder">No audit entries yet.</div>
+          </div>
+        </div>
+
+        <!-- Pane: Checkpoints -->
+        <div class="sidebar-view" id="pane-checkpoints">
+          <div class="view-header">
+            <span class="view-title">CHECKPOINTS</span>
+            <div class="view-actions">
+              <span class="badge-count" id="cp-count-badge">0</span>
+              <button class="action-btn" id="btn-cp-refresh" title="Refresh">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M13.65 2.35A8 8 0 1 0 16 8h-1.5a6.5 6.5 0 1 1-1.9-4.6l-2.1 2.1h5.5V0l-2.35 2.35z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="cp-create">
+            <input type="text" class="db-input" id="cp-label" placeholder="Label, e.g. before refactor">
+            <button class="btn btn-xs btn-primary w-100" id="btn-cp-create">＋ Create checkpoint</button>
+            <p class="form-hint cp-hint">Snapshots the workspace source (skips node_modules, .git, build output). Restoring overwrites files from the snapshot and first saves an automatic safety checkpoint, so a restore can itself be undone.</p>
+          </div>
+          <div class="cp-scroll" id="cp-list">
+            <div class="empty-placeholder">Loading checkpoints…</div>
+          </div>
+        </div>
+
+        <!-- Pane 6: Live Preview -->
+        <div class="sidebar-view" id="pane-preview">
+          <div class="view-header">
+            <span class="view-title">LIVE PREVIEW</span>
+            <div class="view-actions">
+              <button class="action-btn" id="btn-preview-detect" title="Detect running dev servers">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM8 3a5 5 0 1 1 0 10A5 5 0 0 1 8 3zm0 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-preview-expand" title="Widen / shrink panel">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M2 2h5v1.5H3.5V7H2V2zm7 0h5v5h-1.5V3.5H9V2zM2 9h1.5v3.5H7V14H2V9zm10.5 0H14v5H9v-1.5h3.5V9z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-preview-devtools" title="Open DevTools for the preview">
+                <span style="font-size:10px;font-weight:700;letter-spacing:-.5px">&lt;/&gt;</span>
+              </button>
+              <button class="action-btn" id="btn-preview-reload" title="Reload">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M13.65 2.35A8 8 0 1 0 16 8h-1.5a6.5 6.5 0 1 1-1.9-4.6l-2.1 2.1h5.5V0l-2.35 2.35z" fill="currentColor"/></svg>
+              </button>
+              <button class="action-btn" id="btn-preview-external" title="Open in browser">
+                <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M9 2h5v5h-1.5V4.56L7.7 9.36 6.64 8.3l4.8-4.8H9V2zM3.5 3.5h3V5h-3v7.5h7.5v-3H12.5v4A1 1 0 0 1 11.5 14.5h-8A1 1 0 0 1 2.5 13.5v-9a1 1 0 0 1 1-1z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="preview-bar">
+            <button class="action-btn" id="btn-preview-back" title="Back" disabled>◀</button>
+            <button class="action-btn" id="btn-preview-forward" title="Forward" disabled>▶</button>
+            <input type="text" class="preview-url" id="preview-url" placeholder="http://localhost:3000" value="" spellcheck="false">
+            <button class="btn btn-xs btn-primary" id="btn-preview-go">Go</button>
+          </div>
+          <div class="preview-sub">
+            <label class="preview-auto"><input type="checkbox" id="preview-auto" checked> Auto-reload on file save</label>
+            <span class="preview-status" id="preview-status"></span>
+          </div>
+          <div class="preview-detected" id="preview-detected"></div>
+          <div class="preview-frame-wrap">
+            <webview id="preview-frame" class="preview-frame" src="about:blank" partition="persist:omnidev-preview"></webview>
+            <div class="preview-overlay" id="preview-overlay" hidden>
+              <div class="po-title" id="po-title">Nothing to preview yet</div>
+              <div class="po-text" id="po-text"></div>
+              <div class="po-actions">
+                <button class="btn btn-xs btn-primary" id="btn-po-retry">Retry</button>
+                <button class="btn btn-xs btn-outline" id="btn-po-detect">Detect servers</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 7: Database Browser -->
+        <div class="sidebar-view" id="pane-db">
+          <div class="view-header">
+            <span class="view-title">DATABASE BROWSER</span>
+            <button class="action-btn" id="btn-db-connect" title="Re-scan this project for databases">
+              <svg class="icon-svg" viewBox="0 0 16 16" width="13" height="13"><path d="M13.65 2.35A8 8 0 1 0 16 8h-1.5a6.5 6.5 0 1 1-1.9-4.6l-2.1 2.1h5.5V0l-2.35 2.35z" fill="currentColor"/></svg>
+            </button>
+          </div>
+          <div class="db-discovered" id="db-discovered">
+            <div class="empty-placeholder-sm">Scanning project for databases…</div>
+          </div>
+          <details class="db-manual" id="db-manual">
+            <summary>Manual connection</summary>
+          <div class="db-conn">
+            <select class="db-input" id="db-engine">
+              <option value="sqlite">SQLite</option>
+              <option value="mysql">MySQL / MariaDB</option>
+            </select>
+            <div id="db-sqlite-fields">
+              <input type="text" class="db-input" id="db-sqlite-file" placeholder="app.db (relative path)" value="app.db">
+            </div>
+            <div id="db-mysql-fields" hidden>
+              <input type="text" class="db-input" id="db-mysql-db" placeholder="database name">
+              <div class="db-row2">
+                <input type="text" class="db-input" id="db-mysql-host" placeholder="127.0.0.1" value="127.0.0.1">
+                <input type="text" class="db-input" id="db-mysql-port" placeholder="3306" value="3306">
+              </div>
+              <div class="db-row2">
+                <input type="text" class="db-input" id="db-mysql-user" placeholder="root" value="root">
+                <input type="password" class="db-input" id="db-mysql-pass" placeholder="password">
+              </div>
+            </div>
+            <button class="btn btn-xs btn-primary w-100" id="btn-db-load">Load tables</button>
+          </div>
+          <div class="db-tables" id="db-tables"></div>
+          </details>
+        </div>
+      </aside>
+
+      <!-- Sidebar Vertical Resizer Handle -->
+      <div class="resizer-v" id="sidebar-resizer"></div>
+
+      <!-- 3. Central Editor & Inspector Area -->
+      <main class="main-editor-area">
+        <!-- Editor Tabs Rail -->
+        <div class="tabs-rail" id="editor-tabs-rail">
+          <!-- Dynamically populated tabs -->
+        </div>
+
+        <!-- Main Editor Viewport -->
+        <div class="editor-viewport">
+          <!-- View A: Blank Canvas (Shown after project open/create) -->
+          <div class="viewport-screen active" id="screen-blank">
+            <div class="blank-watermark">
+              <img class="watermark-logo" src="../../assets/logo.svg" alt="">
+              <div class="watermark-title" id="blank-workspace-title">OmniDev Studio</div>
+              <div class="watermark-sub" id="blank-workspace-path">Workspace ready. Open a file or start chatting with ChatGPT.</div>
+            </div>
+          </div>
+
+          <!-- View B: Welcome Screen (Only when user explicitly visits or has no projects) -->
+          <div class="viewport-screen" id="screen-welcome">
+            <div class="welcome-hero">
+              <div class="hero-left">
+                <img class="hero-logo" src="../../assets/logo.svg" alt="">
+                <h2>OmniDev Studio</h2>
+                <p class="hero-sub">Edit local files and inspect AI activity in one workspace.</p>
+
+                <div class="hero-actions-list">
+                  <div class="hero-action-card" id="btn-w-new-proj">
+                    <span class="action-icon">📁</span>
+                    <div class="action-meta">
+                      <strong>New Workspace / Project...</strong>
+                      <span>Setup a project with custom localhost URL &amp; database notes</span>
+                    </div>
+                  </div>
+                  <div class="hero-action-card" id="btn-w-open-folder">
+                    <span class="action-icon">📂</span>
+                    <div class="action-meta">
+                      <strong>Open Existing Folder...</strong>
+                      <span>Select any directory on your computer</span>
+                    </div>
+                  </div>
+                  <div class="hero-action-card" id="btn-w-connect-mcp">
+                    <span class="action-icon">⚡</span>
+                    <div class="action-meta">
+                      <strong>Connect an MCP client</strong>
+                      <span>Set up a local or public connection</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hero-right">
+                <h3>Recent Workspaces</h3>
+                <div class="recent-workspaces-scroll" id="recent-workspaces-scroll">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View C: Code Editor (Powered by CodeMirror) -->
+          <div class="viewport-screen" id="screen-code-editor">
+            <div class="code-editor-topbar">
+              <div class="file-path-indicator" id="code-file-name">index.php</div>
+              <button class="btn btn-xs btn-primary" id="btn-save-code-file">Save (Ctrl+S)</button>
+            </div>
+            <!-- CodeMirror mounts here -->
+            <div class="codemirror-wrapper" id="codemirror-wrapper"></div>
+          </div>
+
+          <!-- View D: Live AI Activity & Process Inspector (User Requirement #3 & #4) -->
+          <div class="viewport-screen" id="screen-activity-inspector">
+            <div class="inspector-topbar">
+              <div class="inspector-header-left">
+                <span class="status-badge" id="insp-status-badge">SUCCESS</span>
+                <span class="insp-title" id="insp-tool-title">run_command</span>
+                <span class="insp-duration" id="insp-duration">45ms</span>
+                <span class="insp-time" id="insp-time">19:30:12</span>
+              </div>
+              <div class="inspector-header-right">
+                <button class="btn btn-xs btn-danger" id="btn-insp-kill-job" style="display:none;">✕ Terminate Process</button>
+                <button class="btn btn-xs btn-secondary" id="btn-insp-copy-output">Copy Output</button>
+              </div>
+            </div>
+
+            <div class="inspector-body">
+              <!-- Parameters Section -->
+              <div class="inspector-card">
+                <div class="card-bar">
+                  <span>INPUT PARAMETERS / ARGUMENTS</span>
+                  <button class="btn-copy-mini" id="btn-copy-insp-params">Copy</button>
+                </div>
+                <pre class="inspector-pre" id="insp-params-box">{}</pre>
+              </div>
+
+              <!-- Results / Output Section -->
+              <div class="inspector-card flex-1">
+                <div class="card-bar">
+                  <span>EXECUTION RESULT / OUTPUT LOGS</span>
+                </div>
+                <pre class="inspector-pre pre-output" id="insp-output-box">(No output returned)</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Horizontal Resizer Handle (User Requirement #5) -->
+        <div class="resizer-h" id="panel-resizer" title="Drag to resize panel"></div>
+
+        <!-- 4. Bottom Resizable Terminal / Output Panel -->
+        <section class="bottom-panel" id="bottom-panel">
+          <div class="panel-header-rail">
+            <div class="panel-tabs">
+              <button class="p-tab active" data-panel="tab-terminal">Terminal</button>
+              <button class="p-tab" data-panel="tab-execution-log">AI Execution Log</button>
+              <button class="p-tab" data-panel="tab-server-output">Server Output</button>
+            </div>
+            <div class="panel-tools">
+              <span class="shell-pill" id="panel-shell-status">powershell.exe</span>
+              <button class="panel-tool-btn text-red" id="btn-kill-proc" title="Terminate Running Command" style="display:none;">✕ Kill</button>
+              <button class="panel-tool-btn" id="btn-clear-term" title="Clear Console">⊘ Clear</button>
+              <button class="panel-tool-btn" id="btn-toggle-panel" title="Toggle Panel" aria-label="Toggle panel" aria-expanded="true">↕</button>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <!-- Terminal Screen -->
+            <div class="panel-screen active" id="tab-terminal">
+              <pre class="terminal-box" id="terminal-stream-box">Ready. Commands invoked by ChatGPT will stream their live output here...</pre>
+            </div>
+
+            <!-- AI Execution Table Screen -->
+            <div class="panel-screen" id="tab-execution-log">
+              <div class="table-scroll-wrap">
+                <table class="exec-table">
+                  <thead>
+                    <tr>
+                      <th width="80">Status</th>
+                      <th width="140">Tool</th>
+                      <th width="90">Time</th>
+                      <th width="80">Duration</th>
+                      <th>Arguments</th>
+                    </tr>
+                  </thead>
+                  <tbody id="exec-table-body">
+                    <tr><td colspan="5" class="empty-cell">No tools executed yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Server Output Screen -->
+            <div class="panel-screen" id="tab-server-output">
+              <pre class="terminal-box" id="server-output-box"></pre>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- 5. Bottom Status Bar -->
+    <footer class="studio-statusbar">
+      <div class="sb-left">
+        <span class="sb-item bg-accent" id="sb-git-branch-info">
+          <svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12"><path d="M11.75 2.5a1.75 1.75 0 1 0-2.5 1.54v2.96a2 2 0 0 0-1 1.75v1.46a1.75 1.75 0 1 0 1.5 0V8.75a.5.5 0 0 1 .5-.5h2a1.75 1.75 0 1 0 0-3.5h-1V4.04a1.75 1.75 0 0 0 .5-1.54z" fill="currentColor"/></svg>
+          <span id="sb-branch-label">main</span>
+        </span>
+        <span class="sb-item" id="sb-active-ws-path">C:\Users\...</span>
+      </div>
+
+      <div class="sb-right">
+        <span class="sb-item" id="sb-ngrok-indicator">
+          <span class="online-dot"></span> MCP: <strong id="sb-ngrok-domain-text">Not configured</strong>
+        </span>
+        <span class="sb-item" id="sb-editor-cursor-pos" style="display:none;">Ln 1, Col 1</span>
+        <span class="sb-item" id="sb-editor-mode-label">Plain Text</span>
+        <span class="sb-item">UTF-8</span>
+      </div>
+    </footer>
+
+    <!-- ============================================== -->
+    <!-- MODAL 1: NEW PROJECT WIZARD                    -->
+    <!-- ============================================== -->
+    <div class="modal-backdrop" id="modal-new-project" style="display:none;">
+      <div class="dark-dialog">
+        <div class="dialog-header">
+          <span>Create New Development Workspace</span>
+          <button class="dialog-close" id="btn-close-new-proj">&times;</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-group">
+            <label>Project Name: <span class="text-red">*</span></label>
+            <input type="text" class="dark-input" id="wiz-name" placeholder="e.g. kartha_premium, Antigravity">
+          </div>
+          <div class="form-group">
+            <label>Directory Path: <span class="text-red">*</span></label>
+            <div class="input-with-action">
+              <input type="text" class="dark-input" id="wiz-path" placeholder="C:\WebServer\htdocs\myproject">
+              <button class="btn btn-sm btn-secondary" id="btn-wiz-browse">Browse...</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tech Stack:</label>
+            <select class="dark-select" id="wiz-type">
+              <option value="PHP / XAMPP">PHP / XAMPP</option>
+              <option value="Node.js">Node.js (Express / React / Vite)</option>
+              <option value="Python">Python (Django / FastAPI)</option>
+              <option value="Full-Stack">Full-Stack</option>
+              <option value="General">General Workspace</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Developer Notes &amp; Credentials for AI Agent:</label>
+            <span class="form-hint">Details like XAMPP localhost URL, MySQL database logins, and ports that ChatGPT will use:</span>
+            <textarea class="dark-textarea" id="wiz-notes" rows="4" placeholder="e.g. Running in XAMPP on http://localhost/kartha_premium. MySQL: 127.0.0.1:3306, user: root, password: '' (empty), db_name: kartha_db."></textarea>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-secondary" id="btn-cancel-new-proj">Cancel</button>
+          <button class="btn btn-primary" id="btn-create-new-proj">Create &amp; Open Workspace</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL 2: EDIT DEVELOPER NOTES                  -->
+    <!-- ============================================== -->
+    <div class="modal-backdrop" id="modal-edit-notes" style="display:none;">
+      <div class="dark-dialog">
+        <div class="dialog-header">
+          <span>Edit Environment &amp; Developer Notes</span>
+          <button class="dialog-close" id="btn-close-edit-notes">&times;</button>
+        </div>
+        <div class="dialog-body">
+          <span class="form-hint">These notes are passed directly to ChatGPT/Claude on connection:</span>
+          <textarea class="dark-textarea code-font" id="edit-notes-input" rows="8"></textarea>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-secondary" id="btn-cancel-edit-notes">Cancel</button>
+          <button class="btn btn-primary" id="btn-save-edit-notes">Save Notes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL 3: SETTINGS                              -->
+    <!-- ============================================== -->
+    <div class="modal-backdrop" id="modal-settings" style="display:none;">
+      <div class="dark-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="dialog-header">
+          <span id="settings-title" class="settings-brand-title"><img src="../../assets/logo.svg" alt="">OmniDev Studio Settings</span>
+          <button class="dialog-close" id="btn-close-settings" aria-label="Close settings">&times;</button>
+        </div>
+        <div class="settings-layout">
+          <nav class="settings-nav" aria-label="Settings sections">
+            <button type="button" data-settings-section="tunnel"><span aria-hidden="true">⌁</span> MCP Tunnel</button>
+            <button type="button" data-settings-section="safety"><span aria-hidden="true">◇</span> Safety &amp; Permissions</button>
+            <button type="button" data-settings-section="plugins"><span aria-hidden="true">✧</span> Custom Skills &amp; Plugins</button>
+            <button type="button" data-settings-section="automation"><span aria-hidden="true">⟳</span> Automation &amp; Safety</button>
+          </nav>
+          <div class="settings-content">
+            <section id="settings-tunnel" class="settings-page">
+              <h2>MCP Tunnel</h2>
+              <div class="form-group">
+                <label for="set-tunnel-type">Connection type</label>
+                <select class="dark-select" id="set-tunnel-type"><option value="local">Local · This computer</option><option value="ngrok">ngrok · Public HTTPS</option></select>
+              </div>
+              <div id="settings-ngrok-fields" hidden>
+                <div class="form-group"><label for="set-ngrok-token">ngrok authtoken</label><input type="password" class="dark-input" id="set-ngrok-token" autocomplete="off"></div>
+                <div class="form-group"><label for="set-ngrok-domain">Static domain (optional)</label><input type="text" class="dark-input" id="set-ngrok-domain" placeholder="your-domain.ngrok-free.app"></div>
+                <button type="button" class="btn btn-xs btn-outline" id="btn-reconnect-tunnel">Reconnect saved tunnel</button>
+              </div>
+              <div class="form-group settings-endpoint">
+                <label for="settings-mcp-url">MCP endpoint</label>
+                <div class="input-with-action">
+                  <input type="password" class="dark-input font-mono" id="settings-mcp-url" readonly>
+                  <button class="btn btn-sm btn-secondary" id="btn-reveal-mcp-url" aria-pressed="false">Show</button>
+                  <button class="btn btn-sm btn-primary" id="btn-copy-settings-url">Copy</button>
+                </div>
+                <span id="settings-tunnel-status" class="form-hint" role="status"></span>
+              </div>
+              <div id="settings-local-clients">
+                <h3>Configure a local client</h3>
+                <p class="form-hint">Add OmniDev to the client’s user config, then restart the client.</p>
+                <div class="settings-client-grid">
+                  <button class="settings-client" data-mcp-client="codex"><span aria-hidden="true">⌘</span><strong>Codex</strong><small>Configure</small></button>
+                  <button class="settings-client" data-mcp-client="claude"><span aria-hidden="true">✳</span><strong>Claude Code</strong><small>Configure</small></button>
+                  <button class="settings-client" data-mcp-client="antigravity"><span aria-hidden="true">△</span><strong>Antigravity</strong><small>Configure</small></button>
+                </div>
+                <p class="form-hint" id="settings-client-status" role="status"></p>
+              </div>
+              <div id="settings-remote-guides" hidden>
+                <h3>Connect with a public URL</h3>
+                <p class="form-hint">Keep the HTTPS endpoint private because it contains your access token.</p>
+                <details class="settings-guide"><summary>ChatGPT</summary><p>In ChatGPT on the web, go to Plugins → Add custom MCP server. Select Server URL, paste the endpoint, choose No authentication for this tokenized URL, and create the plugin. Your workspace policy may restrict access.</p><button class="btn btn-xs btn-outline" data-mcp-doc="chatgpt">Official instructions</button></details>
+                <details class="settings-guide"><summary>Claude</summary><p>Open Customize → Connectors → Add custom connector, then paste the endpoint. In Claude Code, run <code>claude mcp add --transport http omnidev_studio &lt;URL&gt;</code>.</p><button class="btn btn-xs btn-outline" data-mcp-doc="claude">Official instructions</button></details>
+                <details class="settings-guide"><summary>Gemini CLI</summary><p>Add <code>omnidev_studio</code> under <code>mcpServers</code> in <code>~/.gemini/settings.json</code>. Set <code>httpUrl</code> to the copied endpoint and reload MCP servers.</p><button class="btn btn-xs btn-outline" data-mcp-doc="gemini">Official instructions</button></details>
+              </div>
+            </section>
+            <section id="settings-safety" class="settings-page" hidden>
+              <h2>Safety &amp; Permissions</h2>
+              <div class="form-group">
+                <label for="set-perm-mode">Tool approval</label>
+                <select class="dark-select" id="set-perm-mode"><option value="smart">Smart · Approve selected reads automatically</option><option value="manual">Manual · Require approval</option><option value="auto">Automatic · Run tools without approval</option></select>
+                <span class="form-hint">Manual and Smart can remember explicit per-tool approvals for this session.</span>
+              </div>
+              <label class="chk-label"><input type="checkbox" id="set-chk-sandbox"> Restrict supported file tools to the active workspace</label>
+              <p class="form-hint">Terminal commands and plugins run with the desktop app’s permissions.</p>
+              <div class="settings-row"><label class="chk-label"><input type="checkbox" id="set-chk-sound"> Play an approval chime</label><button class="btn btn-xs btn-outline" id="btn-test-chime">Test chime</button></div>
+              <div class="settings-row"><div><strong>Session approvals</strong><p class="form-hint">Clear tools you previously allowed for this session.</p></div><button class="btn btn-xs btn-outline" id="btn-clear-approvals">Clear approvals</button></div>
+              <div class="form-group">
+                <label for="set-mcp-token">MCP access token</label>
+                <div class="input-with-action"><input type="password" class="dark-input font-mono" id="set-mcp-token" readonly><button class="btn btn-sm btn-secondary" id="btn-regen-token-settings">Regenerate</button></div>
+                <span class="form-hint">Regenerating changes the endpoint URL. Reconfigure connected clients afterward.</span>
+              </div>
+            </section>
+            <section id="settings-plugins" class="settings-page" hidden>
+              <h2>Custom Skills &amp; Plugins</h2>
+              <p class="form-hint">JavaScript plugins extend OmniDev with MCP tools and reload when their files change.</p>
+              <div id="plugins-list" class="plugins-list"></div>
+              <div class="plugin-actions"><button class="btn btn-sm btn-secondary" id="btn-open-plugins-dir">Open plugins folder</button><button class="btn btn-sm btn-outline" id="btn-reload-plugins">Reload plugins</button></div>
+              <details class="settings-guide"><summary>Write a plugin</summary><p>Add a <code>.js</code> file to the plugins folder. Export a unique <code>name</code>, <code>description</code>, JSON Schema <code>inputSchema</code>, and a <code>handler</code>. Use <code>isCritical: true</code> for tools that should require approval in Smart mode. Install plugins you trust.</p></details>
+              <details class="settings-guide">
+                <summary>Use a client skill</summary>
+                <p>Open the client’s skills folder and add a folder for your skill. In its <code>SKILL.md</code>, describe when the client should call your configured OmniDev MCP tools.</p>
+                <div class="plugin-actions">
+                  <button class="btn btn-xs btn-outline" data-skills-client="codex">Codex skills</button>
+                  <button class="btn btn-xs btn-outline" data-skills-client="claude">Claude Code skills</button>
+                  <button class="btn btn-xs btn-outline" data-skills-client="antigravity">Antigravity skills</button>
+                </div>
+              </details>
+            </section>
+            <section id="settings-automation" class="settings-page" hidden>
+              <h2>Automation &amp; Safety</h2>
+
+              <h3>Checkpoints</h3>
+              <p class="form-hint">Checkpoints now live in their own panel on the left rail, next to Explorer and Live Preview.</p>
+              <div class="settings-row">
+                <button class="btn btn-xs btn-primary" id="btn-open-checkpoints-pane">Open Checkpoints panel</button>
+              </div>
+
+              <h3 style="margin-top:18px;">Secrets Vault</h3>
+              <p class="form-hint">Secrets are stored AES-256 encrypted, not as plaintext notes.</p>
+              <div class="settings-row">
+                <input type="text" class="dark-input" id="vault-key" placeholder="KEY_NAME">
+                <input type="password" class="dark-input" id="vault-val" placeholder="value">
+                <button class="btn btn-xs btn-primary" id="btn-vault-add">Save</button>
+              </div>
+              <div id="vault-list" class="auto-list"></div>
+
+              <h3 style="margin-top:18px;">Triggers</h3>
+              <p class="form-hint">Run a tool automatically on an interval or when files change.</p>
+              <div class="settings-row trigger-form">
+                <input type="text" class="dark-input" id="trg-name" placeholder="Name">
+                <select class="dark-select" id="trg-type"><option value="interval">Interval</option><option value="file-change">On file change</option></select>
+                <input type="text" class="dark-input" id="trg-tool" placeholder="tool name e.g. run_tests">
+                <input type="number" class="dark-input" id="trg-mins" placeholder="mins" value="10" style="max-width:90px;">
+                <button class="btn btn-xs btn-primary" id="btn-trg-add">Add</button>
+              </div>
+              <div id="trg-list" class="auto-list"></div>
+            </section>
+          </div>
+        </div>
+        <div class="dialog-footer"><button class="btn btn-secondary" id="btn-cancel-settings">Close</button><button class="btn btn-primary" id="btn-save-settings">Save settings</button></div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-close-confirm" style="display:none;">
+      <div class="dark-dialog" style="max-width: 460px;">
+        <div class="dialog-header">
+          <span>Close OmniDev Studio</span>
+          <button class="dialog-close" id="btn-close-confirm-x">&times;</button>
+        </div>
+        <div class="dialog-body">
+          <div style="display:flex; gap:16px; align-items:flex-start;">
+            <img src="../../assets/icon-64.png" alt="OmniDev" style="width:48px; height:48px; flex-shrink:0;">
+            <div>
+              <div style="font-weight:600; font-size:14px; color:#fff; margin-bottom:6px;">
+                How would you like to close?
+              </div>
+              <div style="font-size:12.5px; color:#aaa; line-height:1.5;">
+                OmniDev Studio powers your local development MCP server. Keeping it running in the system tray ensures ChatGPT &amp; Claude can continue executing tools and background jobs uninterrupted.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer" style="display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn btn-secondary" id="btn-close-cancel">Cancel</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" id="btn-close-exit" style="border-color:#555; color:#f87171;">Exit Completely</button>
+            <button class="btn btn-primary" id="btn-close-tray">Minimize to Tray</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL 5: NEW SKILL WIZARD                      -->
+    <!-- ============================================== -->
+    <div class="modal-backdrop" id="modal-new-skill" style="display:none;">
+      <div class="dark-dialog" style="max-width: 520px;">
+        <div class="dialog-header">
+          <span>Create a New Skill</span>
+          <button class="dialog-close" id="btn-close-new-skill">&times;</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-group">
+            <label>Skill name <span class="text-red">*</span></label>
+            <span class="form-hint">Lowercase letters, digits, underscores. This is the tool name the AI will call.</span>
+            <input type="text" class="dark-input font-mono" id="skill-name" placeholder="e.g. deploy_staging">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea class="dark-textarea" id="skill-desc" rows="2" placeholder="What does this skill do? The AI reads this to decide when to call it."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" class="dark-input" id="skill-category" placeholder="Custom" value="Custom">
+          </div>
+          <label class="chk-label"><input type="checkbox" id="skill-critical"> Require approval before each run (critical)</label>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-secondary" id="btn-cancel-new-skill">Cancel</button>
+          <button class="btn btn-primary" id="btn-create-new-skill">Create &amp; Open File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DB Results Modal -->
+    <div class="modal-backdrop" id="modal-db-results" style="display:none;">
+      <div class="dark-dialog" style="max-width: 900px; width: 90%;">
+        <div class="dialog-header">
+          <span id="db-results-title">Table</span>
+          <button class="dialog-close" id="btn-close-db-results">&times;</button>
+        </div>
+        <div class="dialog-body">
+          <div class="input-with-action" style="margin-bottom:10px;">
+            <input type="text" class="dark-input font-mono" id="db-sql-input" placeholder="SELECT * FROM table LIMIT 100">
+            <button class="btn btn-sm btn-primary" id="btn-db-run-sql">Run</button>
+          </div>
+          <div class="db-results-scroll" id="db-results-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Command Palette -->
+    <div class="cmd-palette-backdrop" id="cmd-palette" style="display:none;">
+      <div class="cmd-palette">
+        <input type="text" class="cmd-palette-input" id="cmd-palette-input" placeholder="Type a command, pane, or tool…  (Esc to close)">
+        <div class="cmd-palette-results" id="cmd-palette-results"></div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="studio-toast" id="studio-toast" style="display:none;"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../node_modules/codemirror/lib/codemirror.js"></script>
+  <script src="../../node_modules/codemirror/mode/xml/xml.js"></script>
+  <script src="../../node_modules/codemirror/mode/javascript/javascript.js"></script>
+  <script src="../../node_modules/codemirror/mode/css/css.js"></script>
+  <script src="../../node_modules/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+  <script src="../../node_modules/codemirror/mode/clike/clike.js"></script>
+  <script src="../../node_modules/codemirror/mode/php/php.js"></script>
+  <script src="../../node_modules/codemirror/mode/python/python.js"></script>
+  <script src="../../node_modules/codemirror/mode/sql/sql.js"></script>
+  <script src="sound.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
